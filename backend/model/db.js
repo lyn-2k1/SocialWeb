@@ -1,0 +1,13 @@
+const mongoose = require("mongoose");
+
+// require("dotenv").config();
+
+// mongoose options
+// const options = {
+//     useUnifiedTopology: true,
+//     useNewUrlParser: true,
+//     useCreateIndex: true,
+// };
+
+mongoose.connect("mongodb://localhost:27017/social");
+module.exports = { mongoose };
