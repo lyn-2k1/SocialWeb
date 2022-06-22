@@ -9,6 +9,21 @@
     export let user = post.user
     let like = 0
     let sluongLike = []
+    let userData
+    // get data user 
+    onMount(() => {
+            fetch(`http://localhost:4000/profile`, {
+                method: 'GET',
+                headers: {
+                    "Authorization": "Bearer " + Cookies.get("token")
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("user",data)
+                userData = {...data}
+            });
+    });
     onMount(()=> {
         setInterval(()=>{
             fetch(`http://localhost:4000/post/${post._id}/like`, {
@@ -25,10 +40,10 @@
     const incrementCount = () => {
         like += 1
         if(like%2 != 0) {
-            likePost(post,user)
+            likePost(post,userData)
         }
         else {
-            disLikePost(post,user)
+            disLikePost(post,userData)
         }
     }
     function disLikePost (post, user) {

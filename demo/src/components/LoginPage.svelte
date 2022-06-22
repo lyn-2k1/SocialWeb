@@ -6,7 +6,6 @@
   import HomePage from "./HomePage.svelte";
   import { authState } from 'rxfire/auth';
   import { auth } from '../firebase';
-  import users from "../db/user.json"
   const navigate = useNavigate();
 
 
