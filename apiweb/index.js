@@ -6,15 +6,21 @@ const _ = require("lodash");
 const fs = require("fs");
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
+var morgan = require('morgan')
 const jwt = require('jsonwebtoken');
 const port = 4000;
 const passport = require('passport');
+require("./model/db")
 let users = require("./users.json");
 let userModel = require("./model/User");
 let postModel = require("./model/Post");
+let messegeModel = require("./model/Messege")
 const path = require("path");
 require("./config/passport")(passport);
 // const validateRegisterInput = require("./validation/register");
+// Thêm log vào console
+app.use(morgan('tiny'))
+app.disable('etag');
 
 // xử lý json
 app.use(bodyParser.json());
@@ -74,6 +80,26 @@ app.get("/profile", passport.authenticate('jwt', { session: false }),
   (req,res) => {
     res.send(req.user);
 });
+app.get("/profile/post",passport.authenticate('jwt', { session: false }) ,async (req,res) => {
+  // const friend =await userModel.findOne({_id: req.user.id})
+  // return res.send(friend)
+  await postModel.find({user: {'$in': [req.user.id]}}).populate("user", '-password').then(
+        (post)=>{
+        res.send(post);
+      })
+// postModel.find({user: req.user.id}).then(dt=>{
+//   res.send(dt)
+// })
+})
+app.get("/profile/:id", async(req,res) => {
+  if(!req.params.id) return res.status(404).send("Not found")
+  userModel.findOne({_id: req.params.id}).then(dt=>{
+    res.send(dt)
+
+  }).catch((err)=>{
+    res.send(err)
+  })
+})
 
 app.post("/profile/:id/avatar", (req,res)=> {
   userModel.findOneAndUpdate({_id: req.params.id}, {
@@ -110,17 +136,13 @@ app.get("/post",passport.authenticate('jwt', { session: false }) ,async (req,res
       })
   // return res.send(posts)
 })
-// post of my
-app.get("/profile/post",passport.authenticate('jwt', { session: false }) ,async (req,res) => {
-  const friend =await userModel.findOne({_id: req.user.id})
-  // return res.send(friend)
-  await postModel.find({user: {'$in': [req.user.id]}}).populate("user", '-password').then(
-        (post)=>{
-        res.send(post);
-      })
-  // return res.send(posts)
+
+app.post("/delete/post", (req,res) => {
+  postModel.find({_id: req.body.id}).remove()
+  .then(res.send("ok"))
 })
 
+// post of my
 app.post("/profile/post/:id/image", (req,res)=> {
   postModel.findOneAndUpdate({_id: req.params.id}, {
     image: req.body.filename
@@ -164,9 +186,136 @@ app.post("/post/dislike",(req,res) => {
 
 app.get("/post/:id/like", async (req,res) => {
   const post = await postModel.findOne({_id: req.params.id})
-  return res.send(post.like)
+  console.log(post)
+  res.send(post?.like)
 }) 
 
+// post comment post
+app.post("/post/comment", (req,res)=> {
+  postModel.findOneAndUpdate(
+    { _id: req.body.post }, 
+    { $push : 
+      {
+        comments: {
+          content: req.body.content,
+          user: req.body.user
+        } 
+      }
+    },
+    function (error, success) {
+         if (error) {
+             console.log(error);
+             res.send({"message":"failur"})
+         } else {
+             console.log(success);
+             res.send({"message":"success"})
+         }
+     });  
+})
+// get comment post
+app.get("/post/:id/comment", async (req,res)=> {
+  if(!req.params.id) return res.status(404).send("Not found")
+  const post = await postModel.findOne({_id: req.params.id}).populate({
+    path: "comments",
+    populate: { 
+      path:  'user',
+      model: 'users' 
+    }
+  })
+  res.send(post.comments)
+})
+// messeges
+app.post("/messeges",passport.authenticate('jwt', { session: false }) , async (req,res) => {
+  const {friend , content} = req.body
+  const friendId = friend
+  const userId = req.user._id
+  console.log("bodt",{...req.body,userId})
+  messegeModel.findOne( { chatsId: friendId }).then(async dt=>{
+    if(!dt){
+      await messegeModel.create({
+        chatsId: friendId,
+        messeges: [{
+          user: userId,
+          content: content
+        }]  
+         
+      })
+      return
+      
+    }
+    messegeModel.findOneAndUpdate(
+    { chatsId: friendId}, 
+    { $push: 
+      {messeges: 
+        {
+          user: userId,
+          content: content
+        }
+      } 
+    },
+    function (error, success) {
+         if (error) {
+             console.log(error);
+            //  res.send({"message":"failur"})
+         } else {
+             console.log(success);
+            //  res.send({"message":"success"})
+         }
+     }); 
+  })
+
+  messegeModel.findOne( { chatsId: userId }).then(async dt=>{
+    if(!dt){
+      await messegeModel.create({
+        chatsId: userId,
+        messeges: [{
+          user: userId,
+          content: content
+        }]    
+         
+      })
+      return
+         
+    }
+    messegeModel.findOneAndUpdate(
+    { chatsId: userId}, 
+    { $push: 
+      {messeges: 
+        {
+          user: userId,
+          content: content
+        }
+      } 
+    },
+    function (error, success) {
+         if (error) {
+             console.log(error);
+             
+         } else {
+             console.log(success);
+            
+         }
+     }); 
+  })
+  res.send({"message":"success"})
+})
+
+app.get("/messeges/:id", async (req,res) => {
+  if(!req.params.id) return res.status(404).send("Not found")
+  const mess = await messegeModel.findOne({chatsId: req.params.id})
+  .populate({
+    path: "messeges",
+    populate: { 
+      path:  'user',
+      model: 'users' 
+    }
+  }).then(dt =>{
+    res.send(dt)
+  }).catch(err=>{
+    res.send(err)
+  })
+  // res.send(mess)
+})
 // friend
 app.get("/friend/suggest",passport.authenticate('jwt', { session: false }) ,async (req,res) => {
   const friend =await userModel.findOne({_id: req.user.id})
@@ -364,130 +513,6 @@ app.post("/login", (req, res) => {
   });
 });
 
-
-// app.post("/project/:email", (req,res) => {
-//   const dt = req.body;
-//   let email = req.params.email;
-//   let user = _.find(users, { email: email });
-//   user.profile.avatar = dt.filename
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-
-//   return res.send({ user: user});
-// })
-
-// app.post("/post/:email/:id/image" , (req,res) => {
-//   const dt = req.body;
-//   let email = req.params.email;
-//   let id = req.params.id;
-//   let user = _.find(users, { email: email });
-//   let post = _.find(user.posts, function(post){
-//     if(post.id == id){
-//       return true
-//     }
-//   });
-//   post.image = dt.filename
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-//   return res.send({ post: post});
-// })
-
-// app.get("/post/:email/:id/comment", (req, res) => {
-//   let email = req.params.email;
-//   let id = req.params.id;
-//   let user = _.find(users, { email: email });
-//   let post = _.find(user.posts, function(post){
-//     if(post.id == id){
-//       return true
-//     }
-//   });
-//   console.log("user", post, email, id);
-//   res.send(post.comment);
-// });
-
-// app.post("/post/:email", (req, res) => {
-//   const dt = req.body;
-//   console.log(dt);
-//   let email = req.params.email;
-//   let user = _.find(users, { email: email });
-//   user.profile.length_post++;
-//   let id = user.profile.length_post;
-//   dt.date = new Date().toLocaleString();
-//   user.posts.push({id:id,...dt});
-//   // return res.send(db);
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-
-//   return res.json({id:id,...dt});
-// });
-
-// app.post("/post/:email/:id/like", (req, res) => {
-//   // const dt = req.body;
-//   // console.log(dt);
-//   let email = req.params.email;
-//   let id = req.params.id;
-//   let user = _.find(users, { email: email });
-//   let post = _.find(user.posts, function(post){
-//     if(post.id == id){
-//       return true
-//     }
-//   });
-//   // user.posts[id].likes=dt.likes;
-//   post.likes += 1
-//   // return res.send(db);
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-//   return res.send({like:post.likes});
-// });
-// app.post("/delete/post/:email/:id", (req,res) => {
-//   let email = req.params.email;
-//   let id = req.params.id;
-//   let user = _.find(users, { email: email });
-//   let posts = _.remove(user.posts,function(post){
-//     return post.id-1==id
-//   })
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-//   return res.send({posts: posts, id:id});
-// })
-
-// app.post("/post/:email/:id/comment", (req, res) => {
-//   const dt = req.body;
-//   console.log(dt);
-//   let email = req.params.email;
-//   let id = req.params.id;
-//   let user = _.find(users, { email: email });
-//   let post = _.find(user.posts, function(post){
-//     if(post.id == id){
-//       return true
-//     }
-//   });
-//   console.log(post)
-//   post.comment.push(dt);
-//   // return res.send(db);
-//   fs.writeFileSync("./users.json", JSON.stringify(users), (err) => {
-//     if (err) {
-//       console.log(err);
-//     }
-//   });
-//   return res.send({ posts: post});
-// });
-
 // khai báo nơi lưu file upload
 var storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -512,6 +537,7 @@ app.get("/img/:image", (req, res) => {
   const image = req.params?.image
   return res.sendFile(path.join(__dirname, `./upload/${image}`));
 });
+
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);

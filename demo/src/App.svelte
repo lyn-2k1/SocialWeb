@@ -9,6 +9,7 @@
   import Friends from './components/Friends.svelte';
   import RequestsFriend from './components/MyFriends/RequestsFriend.svelte';
   import SuggestsFriend from './components/MyFriends/SuggestsFriend.svelte';
+  import Messege from "./components/Messege/Messege.svelte";
 </script>
 
 
@@ -50,6 +51,8 @@
   <Route path = "suggestsFriend">
     <SuggestsFriend/>
   </Route>
-  
+  <Route path= "messege">
+    <Messege/>
+  </Route>
 </div>
 </Router>

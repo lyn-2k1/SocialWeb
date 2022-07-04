@@ -9,5 +9,7 @@ const mongoose = require("mongoose");
 //     useCreateIndex: true,
 // };
 
-mongoose.connect("mongodb://localhost:27017/social");
-module.exports = { mongoose };
+mongoose.connect("mongodb://localhost:27017/social").then(res=>{
+    console.log("Connected to mongodb")
+});
+module.exports = mongoose ;

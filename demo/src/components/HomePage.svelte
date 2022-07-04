@@ -44,7 +44,7 @@
                 }
             }).then((res) => res.json())
                 .then((data) => {
-                    postsUser = data
+                    postsUser = data.reverse()
             });
         },1000)
     });

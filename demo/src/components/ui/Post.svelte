@@ -24,22 +24,23 @@
                 userData = {...data}
             });
     });
-    onMount(()=> {
-        setInterval(()=>{
-            fetch(`http://localhost:4000/post/${post._id}/like`, {
-                method: 'GET',
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            }).then((res) => res.json())
-                .then((data) => {
-                    sluongLike = data
-            });
-        },1000)
-    });
+    // onMount(()=> {
+    //     if(!post) return;
+    //     setInterval(()=>{
+    //         fetch(`http://localhost:4000/post/${post._id}/like`, {
+    //             method: 'GET',
+    //             headers: {
+    //                 "Content-Type": "application/json",
+    //             },
+    //         }).then((res) => res.json())
+    //             .then((data) => {
+    //                 sluongLike = data
+    //         });
+    //     },1000)
+    // });
     const incrementCount = () => {
-        like += 1
-        if(like%2 != 0) {
+        let isLike = post?.like.includes(user?._id)
+        if(!isLike) {
             likePost(post,userData)
         }
         else {
@@ -110,20 +111,21 @@
     const deletePost = ()=> {
         let idea = confirm("Bạn có chắc chắn muốn xóa?")
         if(idea){
-            fetch(`http://localhost:4000/delete/post/${userEmail}/${post.id-1}`, {
+            fetch(`http://localhost:4000/delete/post`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
-            // body: JSON.stringify({likes: like}),
+            body: JSON.stringify({id: post._id}),
             })
             .then((res) => res.json())
             .then((data) => {
                 console.log(data);
-                // location.reload();
+                location.reload();
             });
         }
     }
+    $: {console.log("thiss posst",post)}
 </script>
 
 <div id="post">
@@ -156,10 +158,10 @@
             {/if}
         </div>
     </div>
-    {#if sluongLike.length > 0}
+    {#if post?.like.length > 0}
         <div id="number_of_people_likes" style="margin: 10px 0 -5px; display: flex;">
             <img src="iconHeart.svg" alt="" style="border-radius: 2rem; margin: 0 5px 0 0" width="25px" height="25px">
-            <span>{sluongLike.length}</span>
+            <span>{post?.like.length}</span>
         </div>
     {/if} 
     <hr  width="100%"/>
@@ -169,7 +171,7 @@
         <IconFunctionPost icon = "iconShare.svg" text = "Chia sẻ" handle = ""/>
     </div>
     {#if comment_click}
-        <CommentPost user = "{user}" idPost ={post.id} userGmail="{userEmail}"/>
+        <CommentPost idPost ={post._id}/>
     {/if}
 </div>
 

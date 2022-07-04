@@ -1,6 +1,6 @@
 <script>
     import firebase from "firebase/app";
-import { async } from "rxjs";
+    import { async } from "rxjs";
     import { db, storage,auth} from "../../firebase";
     import IconText from "./IconText.svelte";
     import Input from "./Input.svelte";
@@ -21,6 +21,7 @@ import { async } from "rxjs";
     const resetInput = ()=>{
         post.content = "";
         postImage = null;
+        fileUpload=null;
     }
     const sendPost = (e) => {
     e.preventDefault();

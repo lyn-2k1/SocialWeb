@@ -3,68 +3,53 @@
     import firebase from "firebase/app";
     import Input from "./Input.svelte";
     import { onMount } from "svelte";
-    export let userGmail 
-    export let user 
+    import Post from "./Post.svelte";
+    import Cookies from "js-cookie";
+    // export let user 
     export let idPost 
-    let commentPost = {
-        user_name_comment: `${user.first_name} ${user.last_name}`,
-        user_avatar_comment: user.avatar,
-        comment: ""
-    }
-    // let commentPost = {
-    //     user_name_comment: `${user?.first_name} ${user?.last_name}`|| "",
-    //     user_avatar_comment: user?.avatar||"",
-    //     comment: "",  
-    //     timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-    // }
-
+    let user
+    let content = ""
+    onMount(() => {
+            fetch(`http://localhost:4000/profile`, {
+                method: 'GET',
+                headers: {
+                    "Authorization": "Bearer " + Cookies.get("token")
+                }
+            })
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("user",data)
+                user = {...data}
+            });
+    });
     let list_comment = []
-
-    // db.collection('user').doc(user.gmail).collection('posts').doc(idPost).collection('comment').onSnapshot(snapshot => {
-    //     let cmts = []
-    //     snapshot.docs.map(doc=>{
-    //         cmts.push({...doc.data(),id: doc.id})     
-    //     })
-    //     // console.log("cmtsUser",cmts)
-    //     list_comment = [...cmts]
-    //     console.log("list comment", list_comment)
-    // })
-
-    // function sendCommentPost(e) {
-    //     e.preventDefault();
-    //     console.log("gmail user",user.gmail)
-    //     db.collection('user').doc(user.gmail).collection('posts').doc(idPost).collection('comment').add(commentPost)
-    //     .then((docRef) => {
-    //         console.log("Document written with ID: ", docRef.id);
-    //         commentPost.comment = ""
-    //     })
-    //     .catch((error) => {
-    //         console.error("Error adding document: ", error);
-    //     });
-    // }
     onMount(() => {
         setInterval(()=>{
-        fetch(`http://localhost:4000/post/${userGmail}/${idPost}/comment`)
+        fetch(`http://localhost:4000/post/${idPost}/comment`)
         .then((res) => res.json())
         .then((data) => {
             list_comment = data
             console.log(list_comment)
         });
-        },1000)
+        },2000)
     });
     function sendCommentPost(e) {
         e.preventDefault();
-        fetch(`http://localhost:4000/post/${userGmail}/${idPost}/comment`, {
+        fetch(`http://localhost:4000/post/comment`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
         },
-        body: JSON.stringify({id: list_comment.length+1,...commentPost}),
+        body: JSON.stringify({
+            post: idPost,
+            user: user._id,
+            content: content
+        }),
         })
         .then((res) => res.json())
         .then((data) => {
             console.log(data);
-            commentPost.comment = ""
+            content = ""
             // .push(data);
         });
     }
@@ -77,7 +62,7 @@
             <img src="{user?.avatar}" alt="avatar" width="40px" height="40px" style="border-radius: 2rem;">
         </div>
         <div id="text">
-            <Input type="text" bind:value={commentPost.comment} placeholder="Viết bình luận..."/>
+            <Input type="text" bind:value={content} placeholder="Viết bình luận..."/>
         </div>
         <button hidden type="submit" on:click={sendCommentPost}>Submit</button>
     </form>
@@ -85,11 +70,11 @@
         {#each list_comment as cmt}
             <div id="cmt">
                 <div id="ava_cmt">
-                    <img src="{cmt.user_avatar_comment}" alt="avatar" width="40px" height="40px" style="border-radius: 2rem;">
+                    <img src="{cmt.user.avatar}" alt="avatar" width="40px" height="40px" style="border-radius: 2rem;">
                 </div>
                 <div id="content_cmt">
-                    <h6 style="padding: 0 5px ;">{cmt.user_name_comment}</h6>
-                    <span style="padding: 0 5px ;">{cmt.comment}</span>
+                    <h6 style="padding: 0 5px ;">{cmt.user.first_name+" "+cmt.user.last_name}</h6>
+                    <span style="padding: 0 5px ;">{cmt.content}</span>
                 </div>
             </div>
 	    {/each}

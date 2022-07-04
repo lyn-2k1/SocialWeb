@@ -12,7 +12,6 @@
     import Cookies from "js-cookie";
     import { window } from "rxjs";
     import { apiUrl } from "../config/config";
-    let userEmail = Cookies.get("email");
     let user;
     let avatar,fileinput
     let userData = {}
@@ -44,6 +43,7 @@
             });
         },1000)
     })
+    console.log(postsUser)
 
     const onFileSelected =(e)=>{
         // let image = e.target.files[0];

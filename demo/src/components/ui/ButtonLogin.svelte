@@ -8,7 +8,7 @@
 <style>
     .btn{
         margin-top: 1rem;
-        background: rgb(226, 155, 167);
+        background: rgba(226, 155, 167, 0.726);
         border-radius: 2rem;
         padding: 12px;
         height: 100%;

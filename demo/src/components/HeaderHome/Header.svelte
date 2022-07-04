@@ -3,7 +3,7 @@
     import IconFunction from "./IconFunction.svelte";
     import { useNavigate } from "svelte-navigator"
     import Cookies from "js-cookie";
-import { apiUrl } from "../../config/config";
+    import { apiUrl } from "../../config/config";
     export let user
     const navigate = useNavigate();
 
@@ -53,7 +53,7 @@ import { apiUrl } from "../../config/config";
         flex-direction: row;
         justify-content: space-between;
         height: 60px;
-        width: 100vw;
+        width: 100%;
         /* box-shadow: 10px 10px 8px #888888; */
         box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
         /* sticky */
